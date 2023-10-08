@@ -15,7 +15,6 @@ public:
 	int width() const;
 	int height() const;
 
-	Color pixel(const int x, const int y) const;
 	void setPixel(const int x, const int y, const Color color);
 
 	const byte* data() const;
@@ -25,7 +24,5 @@ private:
 	int m_width = 0;
 	int m_height = 0;
 	std::vector<Color> m_pixels;
-
-	bool inBounds(const int x, const int y) const;
 };
 }

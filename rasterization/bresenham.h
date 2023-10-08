@@ -1,12 +1,14 @@
 #pragma once
 
-#include <glm/vec2.hpp>
+#include "../common_types.h"
 #include "bitmap.h"
 
 namespace Rasterization {
 
+using Line = std::pair<PixelCoord2d, PixelCoord2d>;
+
 void bresenhamLine(
-	const std::pair<glm::ivec2, glm::ivec2> &segment,
+	const Line &line,
 	const Color color,
 	Bitmap &bitmap);
 }

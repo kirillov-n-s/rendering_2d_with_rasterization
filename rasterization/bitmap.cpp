@@ -30,26 +30,18 @@ const byte *Bitmap::data() const
 	return (byte *)m_pixels.data();
 }
 
-Color Bitmap::pixel(const int x, const int y) const
-{
-	return m_pixels[x + y * m_width];
-}
-
 void Bitmap::setPixel(const int x, const int y, const Color color)
 {
-	if (!inBounds(x, y))
+	if (x < 0 || x >= width())
 		return;
-	m_pixels[x + y * m_width] = color;
+	if (y < 0 || y >= height())
+		return;
+	const int flatInd = x + (m_height - y - 1) * m_width;
+	m_pixels[flatInd] = color;
 }
 
 void Bitmap::clear(const Color color)
 {
 	std::fill(m_pixels.begin(), m_pixels.end(), color);
-}
-
-bool Bitmap::inBounds(const int x, const int y) const
-{
-	const int flatInd = x + y * m_width;
-	return flatInd >= 0 && flatInd < size();
 }
 }

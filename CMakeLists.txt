@@ -11,13 +11,12 @@ add_executable(laba1 main.cpp
 	"core2d/affine2d.h" "core2d/affine2d.cpp"
 
 	"rasterization/bitmap.h" "rasterization/bitmap.cpp"
-	"rasterization/color.h" "rasterization/segment.h"
+	"rasterization/color.h"
 	"rasterization/bresenham.h" "rasterization/bresenham.cpp"
+	"rasterization/rasterization.h" "rasterization/rasterization.cpp"
 
-	"rendering/rendering.h" "rendering/rendering.cpp")
+	"rendering/rendering.h" "rendering/rendering.cpp" "common_types.h")
 
 target_link_libraries(laba1 opengl32.lib)
 target_link_libraries(laba1 glew32.lib)
 target_link_libraries(laba1 glfw3.lib)
-
-

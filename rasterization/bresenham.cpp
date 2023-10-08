@@ -3,14 +3,14 @@
 namespace Rasterization {
 
 void bresenhamLine(
-    const std::pair<glm::ivec2, glm::ivec2>& segment,
+    const Line &line,
 	const Color color,
 	Bitmap& bitmap)
 {
-    int x1 = segment.first.x;
-    int y1 = segment.first.y;
-    const int x2 = segment.second.x;
-    const int y2 = segment.second.y;
+    int x1 = line.first.x;
+    int y1 = line.first.y;
+    const int x2 = line.second.x;
+    const int y2 = line.second.y;
 
     const int dx = std::abs(x2 - x1);
     const int dy = std::abs(y2 - y1);

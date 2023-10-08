@@ -8,19 +8,19 @@ class Model2d
 {
 public:
 	Model2d(
-		const std::vector<glm::vec3> &vertices,
-		const std::vector<std::vector<char>> &adjacency);
+		const HomogCoords2d &vertices,
+		const AdjacencyMat &adjacency);
 
-	std::vector<glm::vec3> vertices() const;
-	std::vector<std::vector<char>> adjacency() const;
+	HomogCoords2d vertices() const;
+	AdjacencyMat adjacency() const;
 
 	void applyTransform(const Affine2d::Mat &transform);
 
 private:
-	std::vector<glm::vec3> m_verticesInit;
-	std::vector<glm::vec3> m_verticesCurrent;
+	HomogCoords2d m_verticesInit;
+	HomogCoords2d m_verticesCurrent;
 	Affine2d::Mat m_transform = Affine2d::identity();
 
-	std::vector<std::vector<char>> m_adjacency;
+	AdjacencyMat m_adjacency;
 };
 }

@@ -2,12 +2,14 @@
 
 namespace Core2d::Affine2d {
 
-void transformVertices(
+HomogCoords2d transformVertices(
 	const Mat& transform,
-	std::vector<glm::vec3>& vertices)
+	const HomogCoords2d& vertices)
 {
-	for (glm::vec3& vertex : vertices)
+	HomogCoords2d result = vertices;
+	for (glm::vec3& vertex : result)
 		vertex = transform * vertex;
+	return result;
 }
 
 Mat identity()
@@ -26,7 +28,7 @@ Mat rotationOrigin(const float angle)
 	);
 }
 
-Mat translation(const glm::vec2 &param)
+Mat translation(const Coord2d &param)
 {
 	return Mat(
 		1.0f, 0.0f, param.x,
@@ -35,7 +37,7 @@ Mat translation(const glm::vec2 &param)
 	);
 }
 
-Mat scale(const glm::vec2 &param)
+Mat scale(const Coord2d &param)
 {
 	return Mat(
 		param.x, 0.0f, 0.0f,

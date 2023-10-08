@@ -84,13 +84,20 @@ void sendImageToFramebuffer(
     const FramebufferData bufData,
     const void *pixels)
 {
-    glTexSubImage2D(
-        GL_TEXTURE_2D,
-        0, 0, 0, texWidth, texHeight,
-        GL_RGBA, GL_UNSIGNED_BYTE,
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, bufData.colorAttachment);
+    glTexImage2D(GL_TEXTURE_2D,
+        0,
+        GL_RGBA,
+        texWidth, texHeight,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
         pixels);
-
     glBindFramebuffer(GL_READ_FRAMEBUFFER, bufData.readFbo);
+    glFramebufferTexture2D(
+        GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+        bufData.colorAttachment, 0);
     glBlitFramebuffer(
         0, 0, texWidth, texHeight,
         0, 0, bufWidth, bufHeight,

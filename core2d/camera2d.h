@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "../rasterization/segment.h"
 #include "model2d.h"
 
 namespace Core2d {
@@ -13,24 +12,39 @@ public:
 	Camera2d(
 		const int screenWidth, const int screenHeight,
 		const float worldL, const float worldR,
-		const float worldB, const float worldT,
-		const glm::vec2 &worldPos = glm::vec2(0.0f));
+		const float worldB, const float worldT);
 
-	void moveTo(const glm::vec2 newWorldPos);
-	void moveBy(const glm::vec2 worldVec);
+	void move(const Coord2d &screenDelta);
+	void zoom(const HomogCoord2d &worldFixedPoint, const float factor);
+	void resizeKeepTopBottom(const int newScreenWidth, const int newScreenHeight);
+	void reset();
 
-	std::vector<Rasterization::Segment> worldToScreen(
-		const Model2d& model);
+	Coord2d worldToScreen(
+		const HomogCoord2d& worldVertex) const;
+	HomogCoord2d screenToWorld(
+		const Coord2d& screenVertex) const;
+
+	Coords2d worldToScreen(
+		const HomogCoords2d &worldVertices) const;
+	HomogCoords2d screenToWorld(
+		const Coords2d& screenVertices) const;
 
 private:
-	int m_screenWidth;
-	int m_screenHeight;
+	struct WorldExtents
+	{
+		float worldL;
+		float worldR;
+		float worldB;
+		float worldT;
+	};
 
-	float m_worldL;
-	float m_worldR;
-	float m_worldB;
-	float m_worldT;
-	
-	glm::vec2 m_worldPos;
+	float worldWidth() const;
+	float worldHeight() const;
+
+	int m_screenWidth = 0;
+	int m_screenHeight = 0;
+
+	WorldExtents m_extents;
+	WorldExtents m_extentsInit;
 };
 }
