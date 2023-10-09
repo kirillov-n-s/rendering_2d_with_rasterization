@@ -17,24 +17,24 @@ Mat identity()
 	return Mat(1.0f);
 }
 
-Mat rotationOrigin(const float angle)
+Mat rotation(const float angle)
 {
 	const float sinA = std::sin(angle);
 	const float cosA = std::cos(angle);
-	return Mat(
+	return glm::transpose(Mat(
 		cosA, -sinA, 0.0f,
 		sinA, cosA, 0.0f,
 		0.0f, 0.0f, 1.0f
-	);
+	));
 }
 
 Mat translation(const Coord2d &param)
 {
-	return Mat(
+	return glm::transpose(Mat(
 		1.0f, 0.0f, param.x,
 		0.0f, 1.0f, param.y,
 		0.0f, 0.0f, 1.0f
-	);
+	));
 }
 
 Mat scale(const Coord2d &param)

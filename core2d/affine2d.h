@@ -13,7 +13,7 @@ HomogCoords2d transformVertices(
 
 Mat identity();
 
-Mat rotationOrigin(const float angle);
+Mat rotation(const float angle);
 
 Mat translation(const Coord2d &param);
 

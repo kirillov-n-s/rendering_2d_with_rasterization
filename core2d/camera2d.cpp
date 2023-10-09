@@ -61,8 +61,8 @@ void Camera2d::reset()
 Coord2d Camera2d::worldToScreen(
 	const HomogCoord2d& worldVertex) const
 {
-	const float worldX = worldVertex.x;
-	const float worldY = worldVertex.y;
+	const float worldX = worldVertex.x; /// worldVertex.z;
+	const float worldY = worldVertex.y; /// worldVertex.z;
 	const float screenX = (worldX - m_extents.worldL) / worldWidth() * m_screenWidth;
 	const float screenY = (m_extents.worldT - worldY) / worldHeight() * m_screenHeight;
 	return Coord2d(std::trunc(screenX), std::trunc(screenY));

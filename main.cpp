@@ -3,9 +3,9 @@
 int main()
 {
 	Scene2d scene(
-		1920, 1080,
+		1600, 1600,
 		-1, 1, -1, 1,
-		Rasterization::colorGray(100)
+		Rasterization::colorBlack
 	);
 
 	const HomogCoords2d arrowXVertices{
@@ -40,14 +40,15 @@ int main()
 
 	scene.addModel(
 		Core2d::Model2d(arrowXVertices, arrowAdjacency),
-		Rasterization::colorBlue);
+		Rasterization::colorGreen);
 	scene.addModel(
 		Core2d::Model2d(arrowYVertices, arrowAdjacency),
 		Rasterization::colorRed);
 
-	scene.addModel(
+	/*scene.addModel(
 		Core2d::Model2d(houseVertices, houseAdjacency),
-		Rasterization::colorCyan);
+		Rasterization::colorCyan,
+		true);*/
 
 	scene.run();
 }

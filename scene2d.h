@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "rendering/rendering.h"
 #include "rasterization/bitmap.h"
 #include "core2d/model2d.h"
@@ -20,12 +21,15 @@ public:
 
 	void addModel(
 		const Core2d::Model2d& model,
-		const Rasterization::Color &color = Rasterization::colorWhite);
+		const Rasterization::Color &color,
+		const bool isSelected = false);
 
 	void run();
 
 private:
-	void renderState();
+	void setTitle(const float frameTime);
+	void render();
+	void handleTransform(const float frameTime);
 
 	GLFWwindow *m_window = nullptr;
 	Rendering::FramebufferData m_bufData;
@@ -43,6 +47,16 @@ private:
 	Core2d::Camera2d m_camera;
 
 	HomogCoords2d m_verticesInProgress;
+	AdjacencyMat m_adjacencyInProgress;
+
+	std::optional<int> m_selectedModelInd;
+	Rasterization::Color m_selectionColor = Rasterization::colorWhite;
+
+	float m_zoomFactor = 0.1f;
+
+	float m_translationParam = 0.01f;
+	float m_rotationParam = 0.01f;
+	float m_scaleParam = 0.01f;
 
 	static void resizeCallback(
 		GLFWwindow* window,
