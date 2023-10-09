@@ -13,6 +13,7 @@ public:
 		const int screenWidth, const int screenHeight,
 		const float worldL, const float worldR,
 		const float worldB, const float worldT,
+		const int pixelSize = 1,
 		const Rasterization::Color bgColor = Rasterization::colorBlack
 	);
 	~Scene2d();
@@ -36,6 +37,7 @@ private:
 
 	int m_width = 0;
 	int m_height = 0;
+	int m_pixelSize = 1;
 
 	Coord2d m_cursorPos;
 	bool m_isPressed = false;

@@ -7,20 +7,24 @@ Scene2d::Scene2d(
     const int screenWidth, const int screenHeight,
     const float worldL, const float worldR,
     const float worldB, const float worldT,
+    const int pixelSize,
     const Rasterization::Color bgColor)
-	: m_width(screenWidth), m_height(screenHeight), m_bgColor(bgColor),
+	: m_width(screenWidth), m_height(screenHeight), m_pixelSize(pixelSize),
+      m_bgColor(bgColor),
       m_camera(
           screenWidth, screenHeight,
           worldL, worldR, worldB, worldT)
 {
-    m_window = Rendering::initWindow(screenWidth, screenHeight);
+    m_window = Rendering::initWindow(
+        screenWidth * pixelSize,
+        screenHeight * pixelSize);
     glfwSetFramebufferSizeCallback(m_window, resizeCallback);
     glfwSetCursorPosCallback(m_window, cursorPosCallback);
     glfwSetScrollCallback(m_window, scrollCallback);
     glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
     glfwSetKeyCallback(m_window, keyCallback);
     glfwSetWindowUserPointer(m_window, this);
-    m_bufData = Rendering::initBuffers(screenWidth, screenHeight);
+    m_bufData = Rendering::initFramebuffer();
 }
 
 Scene2d::~Scene2d()
@@ -86,7 +90,7 @@ void Scene2d::setTitle(const float frameTime)
 
 void Scene2d::render()
 {
-    Rasterization::Bitmap bitmap(m_width, m_height, m_bgColor);
+    Rasterization::Bitmap bitmap(m_width, m_height, m_bgColor, m_pixelSize);
     bitmap.clear(m_bgColor);
 
     const int nModels = m_models.size();
@@ -116,7 +120,6 @@ void Scene2d::render()
 
     Rendering::sendImageToFramebuffer(
         bitmap.width(), bitmap.height(),
-        m_width, m_height,
         m_bufData, bitmap.data());
 }
 
@@ -196,12 +199,14 @@ void Scene2d::resizeCallback(
     const int newWidth, const int newHeight)
 {
     auto* scenePtr = (Scene2d*)glfwGetWindowUserPointer(window);
-    scenePtr->m_camera.resizeKeepTopBottom(newWidth, newHeight);
+    const int pixelSize = scenePtr->m_pixelSize;
+    scenePtr->m_width = newWidth / pixelSize;
+    scenePtr->m_height = newHeight / pixelSize;
+    scenePtr->m_camera.resizeKeepTopBottom(scenePtr->m_width, scenePtr->m_height);
     glViewport(
-        0,
-        0,
-        scenePtr->m_width = newWidth,
-        scenePtr->m_height = newHeight);
+        0, 0,
+        scenePtr->m_width * pixelSize,
+        scenePtr->m_height * pixelSize);
 }
 
 void Scene2d::cursorPosCallback(
@@ -209,7 +214,7 @@ void Scene2d::cursorPosCallback(
     const double newX, const double newY)
 {
     auto* scenePtr = (Scene2d*)glfwGetWindowUserPointer(window);
-    const Coord2d newCursorPos = Coord2d(newX, newY);
+    const Coord2d newCursorPos = Coord2d(newX, newY) / (float)scenePtr->m_pixelSize;
     if (scenePtr->m_isPressed) {
         const Coord2d dxy = newCursorPos - scenePtr->m_cursorPos;
         scenePtr->m_camera.move(dxy);

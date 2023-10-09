@@ -32,33 +32,20 @@ GLFWwindow *initWindow(const int width, const int height)
         window,
         GLFW_CURSOR,
         GLFW_CURSOR_NORMAL);
-
-    glViewport(
-        0,
-        0,
-        width,
-        height);
+    glViewport(0, 0, width, height);
 
     glewInit();
 
     return window;
 }
 
-FramebufferData initBuffers(const int width, const int height)
+FramebufferData initFramebuffer()
 {
     FramebufferData bufData;
 
     glGenTextures(1, &bufData.colorAttachment);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, bufData.colorAttachment);
-    glTexImage2D(GL_TEXTURE_2D,
-        0,
-        GL_RGBA,
-        width, height,
-        0,
-        GL_RGBA,
-        GL_UNSIGNED_BYTE,
-        NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -79,8 +66,7 @@ FramebufferData initBuffers(const int width, const int height)
 }
 
 void sendImageToFramebuffer(
-    const int texWidth, const int texHeight,
-    const int bufWidth, const int bufHeight,
+    const int width, const int height,
     const FramebufferData bufData,
     const void *pixels)
 {
@@ -91,7 +77,7 @@ void sendImageToFramebuffer(
     glTexImage2D(GL_TEXTURE_2D,
         0,
         GL_RGBA,
-        texWidth, texHeight,
+        width, height,
         0,
         GL_RGBA,
         GL_UNSIGNED_BYTE,
@@ -101,10 +87,10 @@ void sendImageToFramebuffer(
         GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
         bufData.colorAttachment, 0);
     glBlitFramebuffer(
-        0, 0, texWidth, texHeight,
-        0, 0, bufWidth, bufHeight,
+        0, 0, width, height,
+        0, 0, width, height,
         GL_COLOR_BUFFER_BIT,
-        GL_LINEAR);
+        GL_NEAREST);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
 }

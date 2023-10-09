@@ -3,8 +3,9 @@
 int main()
 {
 	Scene2d scene(
-		1600, 1600,
+		100, 100,
 		-1, 1, -1, 1,
+		16,
 		Rasterization::colorBlack
 	);
 

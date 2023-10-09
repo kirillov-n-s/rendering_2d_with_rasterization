@@ -15,11 +15,10 @@ struct FramebufferData
 
 GLFWwindow *initWindow(const int width, const int height);
 
-FramebufferData initBuffers(const int width, const int height);
+FramebufferData initFramebuffer();
 
 void sendImageToFramebuffer(
-	const int texWidth, const int texHeight,
-	const int bufWidth, const int bufHeight,
+	const int width, const int height,
 	const FramebufferData bufData,
 	const void *pixels);
 }

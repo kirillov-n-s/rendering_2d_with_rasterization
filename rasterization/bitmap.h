@@ -8,10 +8,11 @@ namespace Rasterization {
 class Bitmap
 {
 public:
-	Bitmap(const int width, const int height);
-	Bitmap(const int width, const int height, const Color color);
+	Bitmap(const int width, const int height, const int pixelSize = 1);
+	Bitmap(
+		const int width, const int height,
+		const Color color, const int pixelSize = 1);
 
-	int size() const;
 	int width() const;
 	int height() const;
 
@@ -23,6 +24,7 @@ public:
 private:
 	int m_width = 0;
 	int m_height = 0;
+	int m_pixelSize = 1;
 	std::vector<Color> m_pixels;
 };
 }

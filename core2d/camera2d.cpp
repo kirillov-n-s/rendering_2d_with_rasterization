@@ -51,6 +51,8 @@ void Camera2d::resizeKeepTopBottom(const int newScreenWidth, const int newScreen
 
 	m_extents.worldL = (worldL + worldR - worldW * aspectRatioRatio) / 2.0f;
 	m_extents.worldR = (worldL + worldR + worldW * aspectRatioRatio) / 2.0f;
+
+	m_extentsInit = m_extents;
 }
 
 void Camera2d::reset()
