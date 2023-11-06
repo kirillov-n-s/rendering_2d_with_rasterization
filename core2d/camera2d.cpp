@@ -1,3 +1,4 @@
+#include <cmath>
 #include "camera2d.h"
 
 namespace Core2d {
@@ -10,6 +11,16 @@ Camera2d::Camera2d(
 	  m_extentsInit{worldL, worldR, worldB, worldT}
 {
 	m_extents = m_extentsInit;
+}
+
+int Camera2d::screenWidth() const
+{
+	return m_screenWidth;
+}
+
+int Camera2d::screenHeight() const
+{
+	return m_screenHeight;
 }
 
 void Camera2d::move(const Coord2d &screenDelta)
@@ -63,8 +74,8 @@ void Camera2d::reset()
 Coord2d Camera2d::worldToScreen(
 	const HomogCoord2d& worldVertex) const
 {
-	const float worldX = worldVertex.x; /// worldVertex.z;
-	const float worldY = worldVertex.y; /// worldVertex.z;
+	const float worldX = worldVertex.x;
+	const float worldY = worldVertex.y;
 	const float screenX = (worldX - m_extents.worldL) / worldWidth() * m_screenWidth;
 	const float screenY = (m_extents.worldT - worldY) / worldHeight() * m_screenHeight;
 	return Coord2d(std::trunc(screenX), std::trunc(screenY));

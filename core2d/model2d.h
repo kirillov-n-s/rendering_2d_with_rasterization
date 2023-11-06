@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include "affine2d.h"
 
 namespace Core2d {
@@ -26,6 +27,11 @@ private:
 };
 
 AdjacencyMat makePolylineAdjacency(const int nVertices);
+
+HomogCoords2d makeVerticesFromFunction(
+	const std::function<float(float)> &function,
+	const float lowerBound, const float upperBound, const float stepSize,
+	const float scale = 1.0f);
 
 template <typename CoordType>
 int closestPointInd(

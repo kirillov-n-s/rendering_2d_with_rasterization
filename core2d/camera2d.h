@@ -1,8 +1,6 @@
-// 2. масштаб с сохр верхней и нижней границ
-
 #pragma once
 
-#include "model2d.h"
+#include "../common_types.h"
 
 namespace Core2d {
 
@@ -13,6 +11,9 @@ public:
 		const int screenWidth, const int screenHeight,
 		const float worldL, const float worldR,
 		const float worldB, const float worldT);
+
+	int screenWidth() const;
+	int screenHeight() const;
 
 	void move(const Coord2d &screenDelta);
 	void zoom(const HomogCoord2d &worldFixedPoint, const float factor);

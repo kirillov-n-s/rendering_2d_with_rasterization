@@ -1,3 +1,4 @@
+#include <numeric>
 #include "model2d.h"
 
 namespace Core2d {
@@ -45,5 +46,19 @@ AdjacencyMat makePolylineAdjacency(const int nVertices)
 		adjacency[vertexInd][vertexInd - 1] = true;
 	}
 	return adjacency;
+}
+
+HomogCoords2d makeVerticesFromFunction(
+	const std::function<float(float)>& function,
+	const float lowerBound, const float upperBound, const float stepSize,
+	const float scale)
+{
+	HomogCoords2d vertices;
+	vertices.reserve(size_t((upperBound - lowerBound) / stepSize));
+	for (float x = lowerBound; x < upperBound; x += stepSize) {
+		const float y = function(x);
+		vertices.emplace_back(x * scale, y * scale, 1.0f);
+	}
+	return vertices;
 }
 }

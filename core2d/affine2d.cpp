@@ -72,4 +72,19 @@ Mat mirrorOrigin()
 		0.0f, 0.0f, 1.0f
 	);
 }
+
+Mat rotationAroundPoint(const Coord2d& point, const float angle)
+{
+	return translation(point) * rotation(angle) * translation(-point);
+}
+
+Mat scaleByAxes(
+	const Coord2d& axesCenter,
+	const float axesAngle,
+	const Coord2d& param)
+{
+	const Mat& axesRotation = rotation(axesAngle);
+	const Mat& invAxesRotation = glm::transpose(axesRotation);
+	return translation(axesCenter) * axesRotation * scale(param) * invAxesRotation * translation(-axesCenter);
+}
 }
