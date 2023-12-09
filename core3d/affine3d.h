@@ -14,19 +14,23 @@ HomogCoords3d transformVertices(
 
 Mat identity();
 
-Mat rotationAroundX(const float angle);
-Mat rotationAroundY(const float angle);
-Mat rotationAroundZ(const float angle);
+Mat rotationX(const float angle);
+Mat rotationY(const float angle);
+Mat rotationZ(const float angle);
 Mat rotation(const Coord3d& yawPitchRoll);
-Mat rotationAroundAxis(const Coord3d& axis, const float angle);
 
 Mat translation(const Coord3d& param);
 
 Mat scale(const Coord3d& param);
 
-Mat scaleByAxes(
-	const Coord3d& axesCenter,
-	const float axesAngle,
+Mat rotationWithPivot(
+	const Coord3d& pivotPosition,
+	const Coord3d& pivotYawPitchRoll,
+	const Coord3d& yawPitchRoll);
+
+Mat scaleWithPivot(
+	const Coord3d& pivotPosition,
+	const Coord3d& pivotYawPitchRoll,
 	const Coord3d& param);
 }
 }

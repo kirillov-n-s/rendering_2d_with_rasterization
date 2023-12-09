@@ -25,30 +25,6 @@ std::vector<Line> modelToLines(
 	return lines;
 }
 
-std::vector<Line> cullInvisible(
-	const std::vector<Line>& lines,
-	const int canvasWidth,
-	const int canvasHeight)
-{
-	const PixelCoord2d zero(0, 0);
-	const PixelCoord2d canvasExtents(canvasWidth, canvasHeight);
-	std::vector<Line> visibleLines;
-	visibleLines.reserve(lines.size());
-	for (const Line& line : lines) {
-
-		const PixelCoord2d start = line.first;
-		const PixelCoord2d end = line.second;
-		const bool outOfBounds = glm::any(
-			(glm::lessThan(start, zero) && glm::lessThan(end, zero))
-			||
-			(glm::greaterThanEqual(start, canvasExtents) && glm::greaterThanEqual(end, canvasExtents)));
-		if (outOfBounds)
-			continue;
-		visibleLines.emplace_back(start, end);
-	}
-	return visibleLines;
-}
-
 void rasterizeModel(
 	const Coords2d& screenVertices,
 	const AdjacencyMat& adjacency,
@@ -58,10 +34,19 @@ void rasterizeModel(
 	const std::vector<Line> lines = modelToLines(
 		screenVertices,
 		adjacency);
-	const std::vector<Line> visibleLines = cullInvisible(
-		lines,
-		bitmap.width(), bitmap.height());
-	for (const Line& line : visibleLines)
+	const PixelCoord2d zero(0, 0);
+	const PixelCoord2d bitmapExtents(bitmap.width(), bitmap.height());
+	for (const Line& line : lines) {
+
+		/*const PixelCoord2d start = line.first;
+		const PixelCoord2d end = line.second;
+		const bool outOfBounds = glm::any(
+			(glm::lessThan(start, zero) || glm::lessThan(end, zero))
+			||
+			(glm::greaterThanEqual(start, bitmapExtents) || glm::greaterThanEqual(end, bitmapExtents)));
+		if (outOfBounds)
+			continue;*/
 		bresenhamLine(line, color, bitmap);
+	}
 }
 }

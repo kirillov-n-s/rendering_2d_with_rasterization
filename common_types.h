@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -44,10 +45,15 @@ inline HomogCoord3d homog3d(const Coord3d coord)
 
 AdjacencyMat makeZeroAdjacency(const int nVertices);
 
+AdjacencyMat modifyAdjacency(
+	const AdjacencyMat& adjacency,
+	const AdjacencyVec& modVec,
+	const std::function<bool(bool, bool)>& reduceFn);
 
 namespace Directions3d {
 
 const Coord3d zero(0.0f, 0.0f, 0.0f);
+const Coord3d one(1.0f, 1.0f, 1.0f);
 
 const Coord3d up(0.0f, 1.0f, 0.0f);
 const Coord3d down(0.0f, -1.0f, 0.0f);

@@ -41,7 +41,19 @@ private:
 	std::vector<Core3d::Model3d> m_models;
 	Core3d::Camera3d m_camera;
 
+	float m_movementSpeed = 0.75f;
+	float m_rotationSpeed = 0.2f;
 	bool m_camRotationOn = false;
+	bool m_camTranslationOn = true;
+
+	Coord3d m_pivotTranslation{ 0.0f };
+	Coord3d m_pivotYawPitchRoll{ 0.0f };
+	bool m_pivotTranslationOn = false;
+
+	bool m_modelOrPivotRotationOn = false;
+	bool m_modelXScalingOn = false;
+	bool m_modelYScalingOn = false;
+	bool m_modelZScalingOn = false;
 
 	static void resizeCallback(
 		GLFWwindow* window,

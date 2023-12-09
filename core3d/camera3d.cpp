@@ -1,32 +1,41 @@
 #include <cmath>
 #include <glm/trigonometric.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include "camera3d.h"
 
 namespace Core3d {
 
 Camera3d::Camera3d(
-	const Coord3d& eye,
-	const Coord3d& screenNormal,
-	const Coord3d& up,
+	const Coord3d& position,
 	const float zNear, const float zFar,
 	const int screenWidth, const int screenHeight,
 	const float worldL, const float worldR,
 	const float worldB, const float worldT)
-	: m_eye(eye), m_screenNormal(screenNormal), m_up(up),
+	: m_position(position),
 	  m_zNear(zNear), m_zFar(zFar),
 	  m_screenWidth(screenWidth), m_screenHeight(screenHeight),
 	  m_worldL(worldL), m_worldR(worldR), m_worldB(worldB), m_worldT(worldT)
-{}
+{
+	updateLocalSpace();
+}
 
 Coord3d Camera3d::position() const
 {
-	return m_eye;
+	return m_position;
 }
 
-Coord3d Camera3d::direction() const
+Coord3d Camera3d::front() const
 {
-	return -m_screenNormal;
+	return m_front;
+}
+
+Coord3d Camera3d::right() const
+{
+	return m_right;
+}
+
+Coord3d Camera3d::up() const
+{
+	return m_up;
 }
 
 int Camera3d::screenWidth() const
@@ -39,25 +48,16 @@ int Camera3d::screenHeight() const
 	return m_screenHeight;
 }
 
-void Camera3d::move(const Coord3d& delta)
+void Camera3d::move(const Coord3d& offset)
 {
-	m_eye += delta;
+	m_position += offset;
 }
 
-void Camera3d::rotate(const float yaw, const float pitch)
+void Camera3d::rotate(const float yawOffset, const float pitchOffset)
 {
-	m_pitch = glm::clamp(m_pitch + pitch, -89.9f, 89.9f);
-	m_yaw += yaw;
-
-	const float radYaw = glm::radians(m_yaw);
-	const float radPitch = glm::radians(m_pitch);
-
-	const float cosYaw = std::cos(radYaw);
-	const float cosPitch = std::cos(radPitch);
-	const float sinYaw = std::sin(radYaw);
-	const float sinPitch = std::sin(radPitch);
-
-	m_screenNormal = -glm::normalize(Coord3d(sinYaw * cosPitch, sinPitch, cosYaw * cosPitch));
+	m_yaw += yawOffset;
+	m_pitch = glm::clamp(m_pitch + pitchOffset, -89.0f, 89.0f);
+	updateLocalSpace();
 }
 
 void Camera3d::resizeKeepTopBottom(const int newScreenWidth, const int newScreenHeight)
@@ -78,20 +78,27 @@ Affine3d::Mat Camera3d::viewProjectionMat() const
 	return projection() * view();
 }
 
-Coords2d Camera3d::worldToScreen(const HomogCoords3d& worldVertices)
+Coords2d Camera3d::worldToScreen(
+	const HomogCoords3d& worldVertices,
+	std::vector<bool>& outIsVertexVisible)
 {
 	const HomogCoords3d& clipSpaceVertices = Core3d::Affine3d::transformVertices(
 		viewProjectionMat(),
 		worldVertices);
+	const int nVertices = clipSpaceVertices.size();
 	Coords2d screenVertices;
-	screenVertices.reserve(clipSpaceVertices.size());
+	screenVertices.reserve(nVertices);
+	outIsVertexVisible.clear();
+	outIsVertexVisible.reserve(nVertices);
 	for (const HomogCoord3d& clipSpaceVertex : clipSpaceVertices) {
 		const float invW = 1.0f / clipSpaceVertex.w;
-		const float screenPlaneX = clipSpaceVertex.x * invW;
-		const float screenPlaneY = clipSpaceVertex.y * invW;
-		const float screenX = (screenPlaneX - m_worldL) / worldWidth() * m_screenWidth;
-		const float screenY = (m_worldT - screenPlaneY) / worldHeight() * m_screenHeight;
+		const float ndcX = clipSpaceVertex.x * invW;
+		const float ndcY = clipSpaceVertex.y * invW;
+		const float ndcZ = clipSpaceVertex.z * invW;
+		const float screenX = (ndcX + 1.0f) * 0.5f * m_screenWidth;
+		const float screenY = (1.0f - ndcY) * 0.5f * m_screenHeight;
 		screenVertices.emplace_back(std::trunc(screenX), std::trunc(screenY));
+		outIsVertexVisible.push_back(ndcZ < 1.0f);
 	}
 	return screenVertices;
 }
@@ -113,11 +120,9 @@ float Camera3d::worldDepth() const
 
 Affine3d::Mat Camera3d::view() const
 {
-	const Coord3d target = -m_screenNormal;//* m_zNear;
-
-	const Coord3d kV = glm::normalize(target - m_eye);
-	const Coord3d iV = glm::normalize(glm::cross(kV, m_up));
-	const Coord3d jV = glm::cross(iV, kV);
+	const Coord3d kV = m_front;
+	const Coord3d iV = m_right;
+	const Coord3d jV = m_up;
 
 	Affine3d::Mat mat = Affine3d::identity();
 	mat[0][0] = iV.x;
@@ -129,9 +134,9 @@ Affine3d::Mat Camera3d::view() const
 	mat[0][2] = -kV.x;
 	mat[1][2] = -kV.y;
 	mat[2][2] = -kV.z;
-	mat[3][0] = -glm::dot(iV, m_eye);
-	mat[3][1] = -glm::dot(jV, m_eye);
-	mat[3][2] = glm::dot(kV, m_eye);
+	mat[3][0] = -glm::dot(iV, m_position);
+	mat[3][1] = -glm::dot(jV, m_position);
+	mat[3][2] = glm::dot(kV, m_position);
 
 	return mat;
 }
@@ -153,5 +158,22 @@ Affine3d::Mat Camera3d::projection() const
 	mat[3][3] = 0.0f;
 
 	return mat;
+}
+
+void Camera3d::updateLocalSpace()
+{
+	const float radYaw = glm::radians(m_yaw);
+	const float radPitch = glm::radians(m_pitch);
+
+	const float cosYaw = std::cos(radYaw);
+	const float cosPitch = std::cos(radPitch);
+	const float sinYaw = std::sin(radYaw);
+	const float sinPitch = std::sin(radPitch);
+
+	const Coord3d front(cosYaw * cosPitch, sinPitch, sinYaw * cosPitch);
+
+	m_front = glm::normalize(front);
+	m_right = glm::normalize(glm::cross(m_front, Directions3d::up));
+	m_up = glm::cross(m_right, m_front);
 }
 }

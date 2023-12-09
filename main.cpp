@@ -70,25 +70,24 @@
 int main()
 {
 	Core3d::Camera3d camera(
-		Directions3d::forward + Directions3d::up * 0.5f + Directions3d::right * 0.5f,
-		glm::normalize(Directions3d::forward + Directions3d::up * 0.5f + Directions3d::right * 0.5f),
-		Directions3d::up,
-		1.0f, 1000.0f,
-		600, 600,
-		-1.0f, 1.0f, -1.0f, 1.0f
+		(Directions3d::forward + Directions3d::up * 0.5f) * 30.0f,
+		100.0f, 1000.0f,
+		300, 300,
+		-100.0f, 100.0f, -100.0f, 100.0f
 	);
+	camera.rotate(0.0f, -30.0f);
 
 	HomogCoords3d xAxisVertices{
 		homog3d(Directions3d::zero),
-		homog3d(Directions3d::right * 0.5f),
+		homog3d(Directions3d::right * 10.0f),
 	};
 	HomogCoords3d yAxisVertices{
 		homog3d(Directions3d::zero),
-		homog3d(Directions3d::up * 0.5f),
+		homog3d(Directions3d::up * 10.0f),
 	};
 	HomogCoords3d zAxisVertices{
 		homog3d(Directions3d::zero),
-		homog3d(Directions3d::forward * 0.5f),
+		homog3d(Directions3d::forward * 10.0f),
 	};
 	AdjacencyMat lineAdjacency{ {0, 1}, {1, 0} };
 
@@ -107,7 +106,6 @@ int main()
 		exit(1);
 	}
 	Core3d::Model3d objModel(objVertices, objAdjacency);
-	objModel.applyTransform(Core3d::Affine3d::scale(Coord3d(0.05f, 0.05f, 0.05f)));
 
 	Scene3d scene(camera, 3);
 

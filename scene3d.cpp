@@ -1,5 +1,6 @@
 #include <sstream>
 #include <string>
+#include <glm/trigonometric.hpp>
 #include "rasterization/rasterization.h"
 #include "scene3d.h"
 
@@ -69,7 +70,7 @@ void Scene3d::run()
 void Scene3d::setTitle(const float frameTime)
 {
     const Coord3d cameraPos = m_camera.position();
-    const Coord3d cameraDir = m_camera.direction();
+    const Coord3d cameraDir = m_camera.front();
     std::ostringstream title;
     title << "FPS: " << (int)(1.0f / frameTime) << ". ";
     title << "Cursor pos: " << m_cursorPos.x << ' ' << m_cursorPos.y << ". ";
@@ -86,15 +87,19 @@ void Scene3d::render()
     const int nModels = m_models.size();
     for (int modelInd = 0; modelInd < nModels; ++modelInd) {
         const Core3d::Model3d& model = m_models[modelInd];
-        const Coords2d screenVertices = m_camera.worldToScreen(model.vertices());
+        const HomogCoords3d &vertices = model.vertices();
+        const AdjacencyMat& adjacency = model.adjacency();
+        std::vector<bool> isVertexVisible;
+        const Coords2d &screenVertices = m_camera.worldToScreen(vertices, isVertexVisible);
+        const AdjacencyMat& visibleVertexAdjacency = modifyAdjacency(
+            adjacency, isVertexVisible,
+            std::logical_and<>());
 
         Rasterization::Color color = m_modelColors[modelInd];
-        /*if (modelInd == m_selectedModelInd)
-            color = modelInd == m_axesModelInd ? m_axesSelectionColor : m_selectionColor;*/
 
         Rasterization::rasterizeModel(
             screenVertices,
-            model.adjacency(),
+            visibleVertexAdjacency,
             color,
             bitmap);
     }
@@ -106,64 +111,205 @@ void Scene3d::render()
 
 void Scene3d::handleTransform(const float frameTime)
 {
-    if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
-        m_camera.move(m_camera.direction() * 0.01f);
-    if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
-        m_camera.move(m_camera.direction() * -0.01f);
+    if (m_camTranslationOn) {
 
-    /*if (m_selectedModelInd < 0)
+        if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
+            m_camera.move(m_camera.front() * m_movementSpeed);
+        if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
+            m_camera.move(m_camera.front() * -m_movementSpeed);
+        if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
+            m_camera.move(m_camera.right() * -m_movementSpeed);
+        if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
+            m_camera.move(m_camera.right() * m_movementSpeed);
+        if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS)
+            m_camera.move(m_camera.up() * m_movementSpeed);
+        if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS)
+            m_camera.move(m_camera.up() * -m_movementSpeed);
         return;
-
-    Core3d::Model3d& selectedModel = m_models[m_selectedModelInd];
-
-    if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::rotationAroundPoint(m_axesCenter, m_rotationParam);
-        selectedModel.applyTransform(transform);
-
-        if (m_selectedModelInd == m_axesModelInd)
-            m_axesAngle += m_rotationParam;
-    }
-    if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::rotationAroundPoint(m_axesCenter, -m_rotationParam);
-        selectedModel.applyTransform(transform);
-
-        if (m_selectedModelInd == m_axesModelInd)
-            m_axesAngle -= m_rotationParam;
     }
 
-    if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::scaleByAxes(m_axesCenter, m_axesAngle, Coord3d(1.0f + m_scaleParam, 1.0f));
-        selectedModel.applyTransform(transform);
-    }
-    if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::scaleByAxes(m_axesCenter, m_axesAngle, Coord3d(1.0f, 1.0f + m_scaleParam));
-        selectedModel.applyTransform(transform);
-    }
-    if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::scaleByAxes(m_axesCenter, m_axesAngle, Coord3d(1.0f - m_scaleParam, 1.0f));
-        selectedModel.applyTransform(transform);
-    }
-    if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::scaleByAxes(m_axesCenter, m_axesAngle, Coord3d(1.0f, 1.0f - m_scaleParam));
-        selectedModel.applyTransform(transform);
-    }
+    Core3d::Model3d& xAxisModel = m_models[0];
+    Core3d::Model3d& yAxisModel = m_models[1];
+    Core3d::Model3d& zAxisModel = m_models[2];
+    Core3d::Model3d& selectedModel = m_models.back();
 
-    if (glfwGetKey(m_window, GLFW_KEY_R) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::scaleByAxes(m_axesCenter, m_axesAngle, Coord3d(1.0f + m_scaleParam, 1.0f + m_scaleParam));
-        selectedModel.applyTransform(transform);
+    if (m_modelOrPivotRotationOn) {
+        const float radRotationSpeed = glm::radians(m_rotationSpeed) * 10.0f;
+        if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::right * radRotationSpeed;
+            const Core3d::Affine3d::Mat transform =
+                Core3d::Affine3d::rotationWithPivot(m_pivotTranslation, m_pivotYawPitchRoll, vec);
+            if (m_pivotTranslationOn) {
+                m_pivotYawPitchRoll += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::left * radRotationSpeed;
+            const Core3d::Affine3d::Mat transform =
+                Core3d::Affine3d::rotationWithPivot(m_pivotTranslation, m_pivotYawPitchRoll, vec);
+            if (m_pivotTranslationOn) {
+                m_pivotYawPitchRoll += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::forward * radRotationSpeed;
+            const Core3d::Affine3d::Mat transform =
+                Core3d::Affine3d::rotationWithPivot(m_pivotTranslation, m_pivotYawPitchRoll, vec);
+            if (m_pivotTranslationOn) {
+                m_pivotYawPitchRoll += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::backward * radRotationSpeed;
+            const Core3d::Affine3d::Mat transform =
+                Core3d::Affine3d::rotationWithPivot(m_pivotTranslation, m_pivotYawPitchRoll, vec);
+            if (m_pivotTranslationOn) {
+                m_pivotYawPitchRoll += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::up * radRotationSpeed;
+            const Core3d::Affine3d::Mat transform =
+                Core3d::Affine3d::rotationWithPivot(m_pivotTranslation, m_pivotYawPitchRoll, vec);
+            if (m_pivotTranslationOn) {
+                m_pivotYawPitchRoll += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::down * radRotationSpeed;
+            const Core3d::Affine3d::Mat transform =
+                Core3d::Affine3d::rotationWithPivot(m_pivotTranslation, m_pivotYawPitchRoll, vec);
+            if (m_pivotTranslationOn) {
+                m_pivotYawPitchRoll += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
     }
-    if (glfwGetKey(m_window, GLFW_KEY_F) == GLFW_PRESS) {
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::scaleByAxes(m_axesCenter, m_axesAngle, Coord3d(1.0f - m_scaleParam, 1.0f - m_scaleParam));
-        selectedModel.applyTransform(transform);
-    }*/
+    else {
+        if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::backward * m_movementSpeed;
+            const Core3d::Affine3d::Mat transform = Core3d::Affine3d::translation(vec);
+            if (m_pivotTranslationOn) {
+                m_pivotTranslation += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::forward * m_movementSpeed;
+            const Core3d::Affine3d::Mat transform = Core3d::Affine3d::translation(vec);
+            if (m_pivotTranslationOn) {
+                m_pivotTranslation += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::left * m_movementSpeed;
+            const Core3d::Affine3d::Mat transform = Core3d::Affine3d::translation(vec);
+            if (m_pivotTranslationOn) {
+                m_pivotTranslation += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::right * m_movementSpeed;
+            const Core3d::Affine3d::Mat transform = Core3d::Affine3d::translation(vec);
+            if (m_pivotTranslationOn) {
+                m_pivotTranslation += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::up * m_movementSpeed;
+            const Core3d::Affine3d::Mat transform = Core3d::Affine3d::translation(vec);
+            if (m_pivotTranslationOn) {
+                m_pivotTranslation += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+
+        if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS) {
+            const Coord3d vec = Directions3d::down * m_movementSpeed;
+            const Core3d::Affine3d::Mat transform = Core3d::Affine3d::translation(vec);
+            if (m_pivotTranslationOn) {
+                m_pivotTranslation += vec;
+                xAxisModel.applyTransform(transform);
+                yAxisModel.applyTransform(transform);
+                zAxisModel.applyTransform(transform);
+            }
+            else {
+                selectedModel.applyTransform(transform);
+            }
+        }
+    }
 }
 
 void Scene3d::resizeCallback(
@@ -188,32 +334,11 @@ void Scene3d::cursorPosCallback(
     auto* scenePtr = (Scene3d*)glfwGetWindowUserPointer(window);
     const Coord2d newCursorPos = Coord2d(newX, newY) / (float)scenePtr->m_pixelSize;
 
-    if (scenePtr->m_camRotationOn) {
-        const Coord2d screenDxy = newCursorPos - scenePtr->m_cursorPos;
-        const float dYaw = screenDxy.x * 180.0f / scenePtr->m_camera.screenWidth();
-        const float dPitch = screenDxy.y * 180.0f / scenePtr->m_camera.screenHeight();
+    const Coord2d screenDxy = newCursorPos - scenePtr->m_cursorPos;
+    const float dYaw = screenDxy.x * scenePtr->m_rotationSpeed;
+    const float dPitch = -screenDxy.y * scenePtr->m_rotationSpeed;
+    if (scenePtr->m_camRotationOn)
         scenePtr->m_camera.rotate(dYaw, dPitch);
-    }
-
-    /*if (scenePtr->m_isPanning) {
-        const Coord3d screenDxy = newCursorPos - scenePtr->m_cursorPos;
-        scenePtr->m_camera.move(screenDxy);
-    }
-
-    const int selectedModelInd = scenePtr->m_selectedModelInd;
-    if (scenePtr->m_isTranslating && selectedModelInd >= 0) {
-        const Coord3d worldCursorPos =
-            scenePtr->m_camera.screenToWorld(scenePtr->m_cursorPos);
-        const Coord3d worldNewCursorPos =
-            scenePtr->m_camera.screenToWorld(newCursorPos);
-        const Coord3d worldDxy = worldNewCursorPos - worldCursorPos;
-        const Core3d::Affine3d::Mat transform =
-            Core3d::Affine3d::translation(worldDxy);
-        scenePtr->m_models[selectedModelInd].applyTransform(transform);
-
-        if (selectedModelInd == scenePtr->m_axesModelInd)
-            scenePtr->m_axesCenter += worldDxy;
-    }*/
 
     scenePtr->m_cursorPos = newCursorPos;
 }
@@ -223,6 +348,28 @@ void Scene3d::scrollCallback(
     const double dx, const double dy)
 {
     auto* scenePtr = (Scene3d*)glfwGetWindowUserPointer(window);
+    const float scaleFactor = dy * 0.1f;
+    Core3d::Model3d& selectedModel = scenePtr->m_models.back();
+    const Coord3d& pivotTranslation = scenePtr->m_pivotTranslation;
+    const Coord3d& pivotYawPitchRoll = scenePtr->m_pivotYawPitchRoll;
+    if (scenePtr->m_modelXScalingOn) {
+        const Coord3d vec = Directions3d::right * scaleFactor + Directions3d::one;
+        const Core3d::Affine3d::Mat transform =
+            Core3d::Affine3d::scaleWithPivot(pivotTranslation, pivotYawPitchRoll, vec);
+        selectedModel.applyTransform(transform);
+    }
+    if (scenePtr->m_modelYScalingOn) {
+        const Coord3d vec = Directions3d::up * scaleFactor + Directions3d::one;
+        const Core3d::Affine3d::Mat transform =
+            Core3d::Affine3d::scaleWithPivot(pivotTranslation, pivotYawPitchRoll, vec);
+        selectedModel.applyTransform(transform);
+    }
+    if (scenePtr->m_modelZScalingOn) {
+        const Coord3d vec = Directions3d::forward * scaleFactor + Directions3d::one;
+        const Core3d::Affine3d::Mat transform =
+            Core3d::Affine3d::scaleWithPivot(pivotTranslation, pivotYawPitchRoll, vec);
+        selectedModel.applyTransform(transform);
+    }
 }
 
 void Scene3d::mouseButtonCallback(
@@ -234,17 +381,6 @@ void Scene3d::mouseButtonCallback(
         scenePtr->m_camRotationOn = true;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
         scenePtr->m_camRotationOn = false;
-    /*if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
-        scenePtr->m_isPanning = true;
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE)
-        scenePtr->m_isPanning = false;
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        const HomogCoord3d newVertex = scenePtr->m_camera.screenToWorld(
-            scenePtr->m_cursorPos);
-        scenePtr->m_verticesInProgress.push_back(newVertex);
-        const int nVertices = scenePtr->m_verticesInProgress.size();
-        scenePtr->m_adjacencyInProgress = Core3d::makePolylineAdjacency(nVertices);
-    }*/
 }
 
 void Scene3d::keyCallback(
@@ -254,33 +390,33 @@ void Scene3d::keyCallback(
     auto* scenePtr = (Scene3d*)glfwGetWindowUserPointer(window);
     if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
         glfwSetWindowShouldClose(scenePtr->m_window, true);
-    /*if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-        scenePtr->m_camera.reset();
-    if (key == GLFW_KEY_ENTER && action == GLFW_RELEASE
-        && scenePtr->m_verticesInProgress.size() >= 2) {
-        scenePtr->m_models.push_back(
-            Core3d::Model3d(
-                scenePtr->m_verticesInProgress,
-                scenePtr->m_adjacencyInProgress));
-        scenePtr->m_modelColors.push_back(Rasterization::colorYellow);
-        scenePtr->m_verticesInProgress.clear();
-    }
-
-    const bool hasSelection = scenePtr->m_selectedModelInd >= 0;
-    if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
-        scenePtr->m_selectedModelInd = hasSelection ? -1 : 0;
-        return;
-    }
-
-    if (!hasSelection)
-        return;
-    const int nModels = scenePtr->m_models.size();
-    const int selectedModelInd = scenePtr->m_selectedModelInd;
-    Core3d::Model3d& selectedModel = scenePtr->m_models[selectedModelInd];
-    if (key == GLFW_KEY_UP && action == GLFW_RELEASE)
-        scenePtr->m_selectedModelInd = (selectedModelInd + 1) % nModels;
-    if (key == GLFW_KEY_DOWN && action == GLFW_RELEASE)
-        scenePtr->m_selectedModelInd = (nModels + selectedModelInd - 1) % nModels;
+    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
+        scenePtr->m_camTranslationOn = false;
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-        selectedModel.resetTransform();*/
+        scenePtr->m_camTranslationOn = true;
+    if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_PRESS) {
+        scenePtr->m_camTranslationOn = false;
+        scenePtr->m_pivotTranslationOn = true;
+    }
+    if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE) {
+        scenePtr->m_camTranslationOn = true;
+        scenePtr->m_pivotTranslationOn = false;
+    }
+    if (key == GLFW_KEY_LEFT_ALT && action == GLFW_PRESS)
+        scenePtr->m_modelOrPivotRotationOn = true;
+    if (key == GLFW_KEY_LEFT_ALT && action == GLFW_RELEASE)
+        scenePtr->m_modelOrPivotRotationOn = false;
+
+    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+        scenePtr->m_modelXScalingOn = true;
+    if (key == GLFW_KEY_Z && action == GLFW_RELEASE)
+        scenePtr->m_modelXScalingOn = false;
+    if (key == GLFW_KEY_X && action == GLFW_PRESS)
+        scenePtr->m_modelYScalingOn = true;
+    if (key == GLFW_KEY_X && action == GLFW_RELEASE)
+        scenePtr->m_modelYScalingOn = false;
+    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+        scenePtr->m_modelZScalingOn = true;
+    if (key == GLFW_KEY_C && action == GLFW_RELEASE)
+        scenePtr->m_modelZScalingOn = false;
 }
