@@ -6,10 +6,11 @@
 
 namespace Rasterization {
 
-using Triangle = std::array<PixelCoord2d, 3>;
+using Triangle = std::array<PixelCoord3d, 3>;
 
 void scanlineTriangle(
 	const Triangle& triangle,
 	const Color color,
-	Bitmap& bitmap);
+	Bitmap& bitmap,
+	Bitmap& zBuffer);
 }

@@ -44,7 +44,9 @@ void Scene3d::addModel(
     const Rasterization::Color& color)
 {
     m_models.push_back(model);
-    m_modelColors.push_back(color);
+    std::vector<Rasterization::Color> colorPerTriangle(model.triangleVertexIndices().size() / 3);
+    std::generate(colorPerTriangle.begin(), colorPerTriangle.end(), Rasterization::colorRandom);
+    m_triangleColorsPerModel.push_back(colorPerTriangle);
 }
 
 void Scene3d::run()
@@ -91,48 +93,61 @@ void Scene3d::setTitle(const float frameTime)
 void Scene3d::render()
 {
     Rasterization::Bitmap bitmap(m_width, m_height, m_bgColor, m_pixelSize);
-    bitmap.clear(m_bgColor);
-
-    const int nAxes = m_axisModels.size();
-    for (int axisInd = 0; axisInd < nAxes; ++axisInd) {
-        const Core3d::Model3dWireframe& axisModel = m_axisModels[axisInd];
-        const HomogCoords3d& vertices = axisModel.vertices();
-        const AdjacencyMat& adjacency = axisModel.adjacency();
-        std::vector<bool> isVertexVisible;
-        const Coords2d& screenVertices = m_camera.worldToScreen(vertices, isVertexVisible);
-        const AdjacencyMat& visibleVertexAdjacency = modifyAdjacency(
-            adjacency, isVertexVisible,
-            std::logical_and<>());
-        const Rasterization::Color color = m_axisColors[axisInd];
-        Rasterization::rasterizeWireframe(
-            screenVertices,
-            visibleVertexAdjacency,
-            color,
-            bitmap);
-    }
+    Rasterization::Bitmap zBuffer(m_width, m_height, Rasterization::depthMinValue, m_pixelSize);
+    Rasterization::Bitmap optionalDepthMap(m_width, m_height, Rasterization::colorBlack, m_pixelSize);
 
     const int nModels = m_models.size();
     for (int modelInd = 0; modelInd < nModels; ++modelInd) {
         const Core3d::Model3dWireAndPoly& model = m_models[modelInd];
         const HomogCoords3d &vertices = model.vertices();
-        const AdjacencyMat& adjacency = model.adjacency();
         const IndexVec& triangleVertexIndices = model.triangleVertexIndices();
-        AdjacencyVec isVertexVisible;
-        const Coords2d &screenVertices = m_camera.worldToScreen(vertices, isVertexVisible);
-        const AdjacencyMat& visibleVertexAdjacency = modifyAdjacency(
-            adjacency, isVertexVisible,
-            std::logical_and<>());
-        const Rasterization::Color color = m_modelColors[modelInd];
-        Rasterization::rasterizeTriangles(
-            screenVertices,
-            triangleVertexIndices,
-            color,
-            bitmap);
-        /*Rasterization::rasterizeWireframe(
-            screenVertices,
-            visibleVertexAdjacency,
-            Rasterization::colorBlack,
-            bitmap);*/
+        const Coords3d &screenVerticesWithDepth = m_camera.worldToScreenWithDepth(vertices);
+        const std::vector<Rasterization::Color> &colorPerTriangle = m_triangleColorsPerModel[modelInd];
+        if (m_showColors && m_showDepth) {
+            Rasterization::rasterizeTrianglesWithZBuffer(
+                screenVerticesWithDepth,
+                triangleVertexIndices,
+                colorPerTriangle,
+                bitmap,
+                zBuffer);
+            Rasterization::zBufferToDepthMap(zBuffer, optionalDepthMap);
+            bitmap.floatMultiplySelf(optionalDepthMap);
+        }
+        else if (m_showColors) {
+            Rasterization::rasterizeTrianglesWithZBuffer(
+                screenVerticesWithDepth,
+                triangleVertexIndices,
+                colorPerTriangle,
+                bitmap,
+                zBuffer);
+        }
+        else if (m_showDepth) {
+            Rasterization::rasterizeDepthMap(
+                screenVerticesWithDepth,
+                triangleVertexIndices,
+                bitmap,
+                zBuffer);
+        }
+    }
+
+    if (m_showAxes) {
+        const int nAxes = m_axisModels.size();
+        for (int axisInd = 0; axisInd < nAxes; ++axisInd) {
+            const Core3d::Model3dWireframe& axisModel = m_axisModels[axisInd];
+            const HomogCoords3d& vertices = axisModel.vertices();
+            const AdjacencyMat& adjacency = axisModel.adjacency();
+            std::vector<bool> isVertexVisible;
+            const Coords2d& screenVertices = m_camera.worldToScreen(vertices, isVertexVisible);
+            const AdjacencyMat& visibleVertexAdjacency = modifyAdjacency(
+                adjacency, isVertexVisible,
+                std::logical_and<>());
+            const Rasterization::Color color = m_axisColors[axisInd];
+            Rasterization::rasterizeWireframe(
+                screenVertices,
+                visibleVertexAdjacency,
+                color,
+                bitmap);
+        }
     }
 
     Rendering::sendImageToFramebuffer(
@@ -450,4 +465,19 @@ void Scene3d::keyCallback(
         scenePtr->m_modelZScalingOn = true;
     if (key == GLFW_KEY_C && action == GLFW_RELEASE)
         scenePtr->m_modelZScalingOn = false;
+
+    if (key == GLFW_KEY_1 && action == GLFW_RELEASE) {
+        scenePtr->m_showColors = true;
+        scenePtr->m_showDepth = false;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_RELEASE) {
+        scenePtr->m_showColors = false;
+        scenePtr->m_showDepth = true;
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_RELEASE) {
+        scenePtr->m_showColors = true;
+        scenePtr->m_showDepth = true;
+    }
+    if (key == GLFW_KEY_TAB && action == GLFW_RELEASE)
+        scenePtr->m_showAxes ^= true;
 }

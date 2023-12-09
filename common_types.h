@@ -9,10 +9,13 @@
 using HomogCoord2d = glm::vec3;
 using Coord2d = glm::vec2;
 using PixelCoord2d = glm::ivec2;
+using PixelCoord3d = glm::ivec3;
 
 using HomogCoords2d = std::vector<glm::vec3>;
 using Coords2d = std::vector<glm::vec2>;
+using Coords3d = std::vector<glm::vec3>;
 using PixelCoords2d = std::vector<glm::ivec2>;
+using PixelCoords3d = std::vector<glm::ivec3>;
 
 using AdjacencyVec = std::vector<bool>;
 using AdjacencyMat = std::vector<AdjacencyVec>;

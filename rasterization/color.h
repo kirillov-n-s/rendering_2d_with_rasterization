@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 using byte = unsigned char;
 
 namespace Rasterization {
@@ -45,5 +47,27 @@ inline Color colorGray(const byte gray, const byte a = 255)
 		.a = a
 	};
 }
+
+inline Color colorRandom()
+{
+	std::default_random_engine rng(std::random_device{}());
+	std::uniform_int_distribution<int> distrib(127, 255);
+	return Color{
+		.r = byte(distrib(rng)),
+		.g = byte(distrib(rng)),
+		.b = byte(distrib(rng))
+	};
 }
 
+inline int colorToInt(const Color color)
+{
+	return *reinterpret_cast<const int *>(&color);
+}
+
+inline Color intToColor(const int val)
+{
+	return *reinterpret_cast<const Color*>(&val);
+}
+
+const Color depthMinValue = intToColor(std::numeric_limits<int>::min());
+}

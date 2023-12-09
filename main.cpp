@@ -110,7 +110,7 @@ int main()
 	}
 	Core3d::Model3dWireAndPoly objModel(objVertices, objAdjacency, objTriangleVertexIndices);
 
-	Scene3d scene(camera, 3, Rasterization::colorGray(200));
+	Scene3d scene(camera, 3, Rasterization::colorGray(64));
 
 	scene.setAxisModels(
 		{ xAxisModel, yAxisModel, zAxisModel },

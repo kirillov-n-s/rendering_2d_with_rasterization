@@ -32,6 +32,8 @@ public:
 		const HomogCoords3d& worldVertices,
 		std::vector<bool> &outIsVertexVisible);
 
+	Coords3d worldToScreenWithDepth(const HomogCoords3d& worldVertices);
+
 private:
 	float worldWidth() const;
 	float worldHeight() const;

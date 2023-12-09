@@ -103,6 +103,29 @@ Coords2d Camera3d::worldToScreen(
 	return screenVertices;
 }
 
+Coords3d Camera3d::worldToScreenWithDepth(const HomogCoords3d& worldVertices)
+{
+	const HomogCoords3d& clipSpaceVertices = Core3d::Affine3d::transformVertices(
+		viewProjectionMat(),
+		worldVertices);
+	const int nVertices = clipSpaceVertices.size();
+	Coords3d screenVerticesWithDepth;
+	screenVerticesWithDepth.reserve(nVertices);
+	for (const HomogCoord3d& clipSpaceVertex : clipSpaceVertices) {
+		const float invW = 1.0f / clipSpaceVertex.w;
+		const float ndcX = clipSpaceVertex.x * invW;
+		const float ndcY = clipSpaceVertex.y * invW;
+		const float ndcZ = clipSpaceVertex.z * invW;
+		const float screenX = (ndcX + 1.0f) * 0.5f * m_screenWidth;
+		const float screenY = (1.0f - ndcY) * 0.5f * m_screenHeight;
+		const float screenZ = -ndcZ * worldDepth();
+		screenVerticesWithDepth.emplace_back(
+			std::trunc(screenX), std::trunc(screenY), std::trunc(screenZ)
+		);
+	}
+	return screenVerticesWithDepth;
+}
+
 float Camera3d::worldWidth() const
 {
 	return m_worldR - m_worldL;

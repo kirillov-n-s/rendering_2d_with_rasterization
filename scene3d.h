@@ -45,7 +45,7 @@ private:
 	std::vector<Rasterization::Color> m_axisColors;
 
 	std::vector<Core3d::Model3dWireAndPoly> m_models;
-	std::vector<Rasterization::Color> m_modelColors;
+	std::vector<std::vector<Rasterization::Color>> m_triangleColorsPerModel;
 
 	Core3d::Camera3d m_camera;
 
@@ -62,6 +62,10 @@ private:
 	bool m_modelXScalingOn = false;
 	bool m_modelYScalingOn = false;
 	bool m_modelZScalingOn = false;
+
+	bool m_showColors = true;
+	bool m_showDepth = false;
+	bool m_showAxes = false;
 
 	static void resizeCallback(
 		GLFWwindow* window,
