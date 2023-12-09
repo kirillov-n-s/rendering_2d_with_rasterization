@@ -2,7 +2,7 @@
 
 #include "rendering/rendering.h"
 #include "rasterization/bitmap.h"
-#include "core3d/model3d.h"
+#include "core3d/model3dwireandpoly.h"
 #include "core3d/camera3d.h"
 
 class Scene3d
@@ -15,8 +15,12 @@ public:
 	);
 	~Scene3d();
 
+	void setAxisModels(
+		const std::array<Core3d::Model3dWireframe, 3> &models,
+		const std::array<Rasterization::Color, 3> &colors);
+
 	void addModel(
-		const Core3d::Model3d& model,
+		const Core3d::Model3dWireAndPoly& model,
 		const Rasterization::Color& color);
 
 	void run();
@@ -36,9 +40,13 @@ private:
 	Coord2d m_cursorPos;
 
 	Rasterization::Color m_bgColor;
+
+	std::vector<Core3d::Model3dWireframe> m_axisModels;
+	std::vector<Rasterization::Color> m_axisColors;
+
+	std::vector<Core3d::Model3dWireAndPoly> m_models;
 	std::vector<Rasterization::Color> m_modelColors;
 
-	std::vector<Core3d::Model3d> m_models;
 	Core3d::Camera3d m_camera;
 
 	float m_movementSpeed = 0.75f;

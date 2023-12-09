@@ -1,6 +1,6 @@
 #include <sstream>
 #include <string>
-#include "rasterization/rasterization.h"
+#include "rasterization/wireframe.h"
 #include "scene2d.h"
 
 Scene2d::Scene2d(
@@ -104,7 +104,7 @@ void Scene2d::render()
         if (modelInd == m_selectedModelInd)
             color = modelInd == m_axesModelInd ? m_axesSelectionColor : m_selectionColor;
 
-        Rasterization::rasterizeModel(
+        Rasterization::rasterizeWireframe(
             screenVertices,
             model.adjacency(),
             color,
@@ -114,7 +114,7 @@ void Scene2d::render()
     if (m_verticesInProgress.size() > 1) {
         const Coords2d& screenVerticesInProgress = m_camera.worldToScreen(
             m_verticesInProgress);
-        Rasterization::rasterizeModel(
+        Rasterization::rasterizeWireframe(
             screenVerticesInProgress,
             m_adjacencyInProgress,
             Rasterization::colorMagenta,

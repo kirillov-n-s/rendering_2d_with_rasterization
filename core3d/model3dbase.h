@@ -4,15 +4,12 @@
 
 namespace Core3d {
 
-	class Model3d
+	class Model3dBase
 	{
 	public:
-		Model3d(
-			const HomogCoords3d& vertices,
-			const AdjacencyMat& adjacency);
+		Model3dBase(const HomogCoords3d& vertices);
 
 		HomogCoords3d vertices() const;
-		AdjacencyMat adjacency() const;
 
 		void applyTransform(const Affine3d::Mat& transform);
 		void resetTransform();
@@ -21,6 +18,5 @@ namespace Core3d {
 		HomogCoords3d m_verticesInit;
 		HomogCoords3d m_verticesCurrent;
 		Affine3d::Mat m_transform = Affine3d::identity();
-		AdjacencyMat m_adjacency;
 	};
 }

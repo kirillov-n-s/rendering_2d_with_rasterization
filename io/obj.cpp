@@ -163,4 +163,25 @@ std::string verticesAndAdjacencyFromObj(
     outAdjacency = facesToAdjacency(triangleVertexIndices, outVertices.size());
     return "";
 }
+
+std::string verticesFacesAndAdjacencyFromObj(
+    const std::string& path,
+    HomogCoords3d& outVertices,
+    IndexVec &outTriangleVertexIndices,
+    AdjacencyMat& outAdjacency)
+{
+    IndexVec polygonVertexIndices;
+    IndexVec polygonStarts;
+    const std::string error = readObjVerticesFaces(
+        path,
+        outVertices,
+        polygonVertexIndices,
+        polygonStarts);
+    if (!error.empty())
+        return std::string("Obj read error: ") + error;
+    outTriangleVertexIndices = triangulateFaces(
+        polygonVertexIndices, polygonStarts);
+    outAdjacency = facesToAdjacency(outTriangleVertexIndices, outVertices.size());
+    return "";
+}
 }

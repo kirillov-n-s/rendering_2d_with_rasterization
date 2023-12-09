@@ -8,7 +8,7 @@ std::vector<Line> modelToLines(
 	const Coords2d &screenVertices,
 	const AdjacencyMat &adjacency);
 
-void rasterizeModel(
+void rasterizeWireframe(
 	const Coords2d& screenVertices,
 	const AdjacencyMat& adjacency,
 	const Color color,

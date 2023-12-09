@@ -1,6 +1,5 @@
 #include <glm/common.hpp>
-#include <glm/vector_relational.hpp>
-#include "rasterization.h"
+#include "wireframe.h"
 
 namespace Rasterization {
 
@@ -25,7 +24,7 @@ std::vector<Line> modelToLines(
 	return lines;
 }
 
-void rasterizeModel(
+void rasterizeWireframe(
 	const Coords2d& screenVertices,
 	const AdjacencyMat& adjacency,
 	const Color color,
@@ -34,19 +33,7 @@ void rasterizeModel(
 	const std::vector<Line> lines = modelToLines(
 		screenVertices,
 		adjacency);
-	const PixelCoord2d zero(0, 0);
-	const PixelCoord2d bitmapExtents(bitmap.width(), bitmap.height());
-	for (const Line& line : lines) {
-
-		/*const PixelCoord2d start = line.first;
-		const PixelCoord2d end = line.second;
-		const bool outOfBounds = glm::any(
-			(glm::lessThan(start, zero) || glm::lessThan(end, zero))
-			||
-			(glm::greaterThanEqual(start, bitmapExtents) || glm::greaterThanEqual(end, bitmapExtents)));
-		if (outOfBounds)
-			continue;*/
+	for (const Line& line : lines)
 		bresenhamLine(line, color, bitmap);
-	}
 }
 }

@@ -1,4 +1,5 @@
-﻿#include <cmath>
+﻿#include <array>
+#include <cmath>
 //#include "scene2d.h"
 #include "scene3d.h"
 #include "io/obj.h"
@@ -91,28 +92,30 @@ int main()
 	};
 	AdjacencyMat lineAdjacency{ {0, 1}, {1, 0} };
 
-	Core3d::Model3d xAxisModel(xAxisVertices, lineAdjacency);
-	Core3d::Model3d yAxisModel(yAxisVertices, lineAdjacency);
-	Core3d::Model3d zAxisModel(zAxisVertices, lineAdjacency);
+	Core3d::Model3dWireframe xAxisModel(xAxisVertices, lineAdjacency);
+	Core3d::Model3dWireframe yAxisModel(yAxisVertices, lineAdjacency);
+	Core3d::Model3dWireframe zAxisModel(zAxisVertices, lineAdjacency);
 
 	HomogCoords3d objVertices;
+	IndexVec objTriangleVertexIndices;
 	AdjacencyMat objAdjacency;
-	const std::string error = IO::verticesAndAdjacencyFromObj(
+	const std::string error = IO::verticesFacesAndAdjacencyFromObj(
 		R"(C:\Users\kirillov_n_s\Desktop\University\CG\assets\Skull.obj)",
 		objVertices,
+		objTriangleVertexIndices,
 		objAdjacency);
 	if (!error.empty()) {
 		std::cerr << error;
 		exit(1);
 	}
-	Core3d::Model3d objModel(objVertices, objAdjacency);
+	Core3d::Model3dWireAndPoly objModel(objVertices, objAdjacency, objTriangleVertexIndices);
 
-	Scene3d scene(camera, 3);
+	Scene3d scene(camera, 3, Rasterization::colorGray(200));
 
-	scene.addModel(xAxisModel, Rasterization::colorRed);
-	scene.addModel(yAxisModel, Rasterization::colorGreen);
-	scene.addModel(zAxisModel, Rasterization::colorBlue);
-	scene.addModel(objModel, Rasterization::colorGray(200));
+	scene.setAxisModels(
+		{ xAxisModel, yAxisModel, zAxisModel },
+		{ Rasterization::colorRed, Rasterization::colorGreen, Rasterization::colorBlue });
+	scene.addModel(objModel, Rasterization::Color {128, 128, 255});
 
 	scene.run();
 }

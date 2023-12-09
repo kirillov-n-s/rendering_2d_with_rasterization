@@ -1,7 +1,8 @@
 #include <sstream>
 #include <string>
 #include <glm/trigonometric.hpp>
-#include "rasterization/rasterization.h"
+#include "rasterization/wireframe.h"
+#include "rasterization/polygonal.h"
 #include "scene3d.h"
 
 Scene3d::Scene3d(
@@ -30,8 +31,16 @@ Scene3d::~Scene3d()
     glfwTerminate();
 }
 
+void Scene3d::setAxisModels(
+    const std::array<Core3d::Model3dWireframe, 3>& models,
+    const std::array<Rasterization::Color, 3>& colors)
+{
+    m_axisModels = std::vector(models.begin(), models.end());
+    m_axisColors = std::vector(colors.begin(), colors.end());
+}
+
 void Scene3d::addModel(
-    const Core3d::Model3d& model,
+    const Core3d::Model3dWireAndPoly& model,
     const Rasterization::Color& color)
 {
     m_models.push_back(model);
@@ -84,24 +93,46 @@ void Scene3d::render()
     Rasterization::Bitmap bitmap(m_width, m_height, m_bgColor, m_pixelSize);
     bitmap.clear(m_bgColor);
 
-    const int nModels = m_models.size();
-    for (int modelInd = 0; modelInd < nModels; ++modelInd) {
-        const Core3d::Model3d& model = m_models[modelInd];
-        const HomogCoords3d &vertices = model.vertices();
-        const AdjacencyMat& adjacency = model.adjacency();
+    const int nAxes = m_axisModels.size();
+    for (int axisInd = 0; axisInd < nAxes; ++axisInd) {
+        const Core3d::Model3dWireframe& axisModel = m_axisModels[axisInd];
+        const HomogCoords3d& vertices = axisModel.vertices();
+        const AdjacencyMat& adjacency = axisModel.adjacency();
         std::vector<bool> isVertexVisible;
-        const Coords2d &screenVertices = m_camera.worldToScreen(vertices, isVertexVisible);
+        const Coords2d& screenVertices = m_camera.worldToScreen(vertices, isVertexVisible);
         const AdjacencyMat& visibleVertexAdjacency = modifyAdjacency(
             adjacency, isVertexVisible,
             std::logical_and<>());
-
-        Rasterization::Color color = m_modelColors[modelInd];
-
-        Rasterization::rasterizeModel(
+        const Rasterization::Color color = m_axisColors[axisInd];
+        Rasterization::rasterizeWireframe(
             screenVertices,
             visibleVertexAdjacency,
             color,
             bitmap);
+    }
+
+    const int nModels = m_models.size();
+    for (int modelInd = 0; modelInd < nModels; ++modelInd) {
+        const Core3d::Model3dWireAndPoly& model = m_models[modelInd];
+        const HomogCoords3d &vertices = model.vertices();
+        const AdjacencyMat& adjacency = model.adjacency();
+        const IndexVec& triangleVertexIndices = model.triangleVertexIndices();
+        AdjacencyVec isVertexVisible;
+        const Coords2d &screenVertices = m_camera.worldToScreen(vertices, isVertexVisible);
+        const AdjacencyMat& visibleVertexAdjacency = modifyAdjacency(
+            adjacency, isVertexVisible,
+            std::logical_and<>());
+        const Rasterization::Color color = m_modelColors[modelInd];
+        Rasterization::rasterizeTriangles(
+            screenVertices,
+            triangleVertexIndices,
+            color,
+            bitmap);
+        /*Rasterization::rasterizeWireframe(
+            screenVertices,
+            visibleVertexAdjacency,
+            Rasterization::colorBlack,
+            bitmap);*/
     }
 
     Rendering::sendImageToFramebuffer(
@@ -128,10 +159,10 @@ void Scene3d::handleTransform(const float frameTime)
         return;
     }
 
-    Core3d::Model3d& xAxisModel = m_models[0];
-    Core3d::Model3d& yAxisModel = m_models[1];
-    Core3d::Model3d& zAxisModel = m_models[2];
-    Core3d::Model3d& selectedModel = m_models.back();
+    Core3d::Model3dWireframe& xAxisModel = m_models[0];
+    Core3d::Model3dWireframe& yAxisModel = m_models[1];
+    Core3d::Model3dWireframe& zAxisModel = m_models[2];
+    Core3d::Model3dWireframe& selectedModel = m_models.back();
 
     if (m_modelOrPivotRotationOn) {
         const float radRotationSpeed = glm::radians(m_rotationSpeed) * 10.0f;
@@ -349,7 +380,7 @@ void Scene3d::scrollCallback(
 {
     auto* scenePtr = (Scene3d*)glfwGetWindowUserPointer(window);
     const float scaleFactor = dy * 0.1f;
-    Core3d::Model3d& selectedModel = scenePtr->m_models.back();
+    Core3d::Model3dWireframe& selectedModel = scenePtr->m_models.back();
     const Coord3d& pivotTranslation = scenePtr->m_pivotTranslation;
     const Coord3d& pivotYawPitchRoll = scenePtr->m_pivotYawPitchRoll;
     if (scenePtr->m_modelXScalingOn) {
