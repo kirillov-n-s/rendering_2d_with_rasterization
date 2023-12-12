@@ -3,6 +3,7 @@
 #include <glm/trigonometric.hpp>
 #include "rasterization/wireframe.h"
 #include "rasterization/polygonal.h"
+#include "rasterization/shading.h"
 #include "scene3d.h"
 
 Scene3d::Scene3d(
@@ -40,13 +41,23 @@ void Scene3d::setAxisModels(
 }
 
 void Scene3d::addModel(
-    const Core3d::Model3dWireAndPoly& model,
-    const Rasterization::Color& color)
+    const Core3d::Model3dPoly& model,
+    const std::vector<Rasterization::Color>& colorPerTriangle)
 {
     m_models.push_back(model);
-    std::vector<Rasterization::Color> colorPerTriangle(model.triangleVertexIndices().size() / 3);
-    std::generate(colorPerTriangle.begin(), colorPerTriangle.end(), Rasterization::colorRandom);
-    m_triangleColorsPerModel.push_back(colorPerTriangle);
+    if (!colorPerTriangle.empty()) {
+        m_triangleColorsPerModel.push_back(colorPerTriangle);
+        return;
+    }
+    const int nTriangles = model.triangleVertexIndices().size() / 3;
+    std::vector<Rasterization::Color> randomColorPerTriangle(nTriangles);
+    std::generate(
+        randomColorPerTriangle.begin(),
+        randomColorPerTriangle.end(),
+        []() {
+            return Rasterization::colorRandom(64, 255);
+        });
+    m_triangleColorsPerModel.push_back(randomColorPerTriangle);
 }
 
 void Scene3d::run()
@@ -96,39 +107,35 @@ void Scene3d::render()
     Rasterization::Bitmap zBuffer(m_width, m_height, Rasterization::depthMinValue, m_pixelSize);
     Rasterization::Bitmap optionalDepthMap(m_width, m_height, Rasterization::colorBlack, m_pixelSize);
 
+    const float lightIntensity = 1.0f;
+
     const int nModels = m_models.size();
     for (int modelInd = 0; modelInd < nModels; ++modelInd) {
-        const Core3d::Model3dWireAndPoly& model = m_models[modelInd];
+        const Core3d::Model3dPoly& model = m_models[modelInd];
         const HomogCoords3d &vertices = model.vertices();
         const IndexVec& triangleVertexIndices = model.triangleVertexIndices();
+        const Coords3d& triangleNormals = model.triangleNormals();
         const Coords3d &screenVerticesWithDepth = m_camera.worldToScreenWithDepth(vertices);
-        const std::vector<Rasterization::Color> &colorPerTriangle = m_triangleColorsPerModel[modelInd];
-        if (m_showColors && m_showDepth) {
-            Rasterization::rasterizeTrianglesWithZBuffer(
-                screenVerticesWithDepth,
-                triangleVertexIndices,
-                colorPerTriangle,
-                bitmap,
-                zBuffer);
-            Rasterization::zBufferToDepthMap(zBuffer, optionalDepthMap);
-            bitmap.floatMultiplySelf(optionalDepthMap);
-        }
-        else if (m_showColors) {
-            Rasterization::rasterizeTrianglesWithZBuffer(
-                screenVerticesWithDepth,
-                triangleVertexIndices,
-                colorPerTriangle,
-                bitmap,
-                zBuffer);
-        }
-        else if (m_showDepth) {
-            Rasterization::rasterizeDepthMap(
-                screenVerticesWithDepth,
-                triangleVertexIndices,
-                bitmap,
-                zBuffer);
-        }
+        const int nTriangles = triangleNormals.size();
+        std::vector<Rasterization::Color> colorPerTriangle;
+        if (m_showColors)
+            colorPerTriangle = m_triangleColorsPerModel[modelInd];
+        else
+            colorPerTriangle.assign(nTriangles, Rasterization::colorWhite);
+        if (m_showShading)
+            Rasterization::flatShading(triangleNormals, m_camera.front(), colorPerTriangle);
+        Rasterization::rasterizeTrianglesWithZBuffer(
+            screenVerticesWithDepth,
+            triangleVertexIndices,
+            colorPerTriangle,
+            bitmap,
+            zBuffer);
     }
+    if (m_showDepth) {
+        Rasterization::zBufferToDepthMap(zBuffer, optionalDepthMap);
+        bitmap.floatMultiplySelf(optionalDepthMap);
+    }
+
 
     if (m_showAxes) {
         const int nAxes = m_axisModels.size();
@@ -174,10 +181,10 @@ void Scene3d::handleTransform(const float frameTime)
         return;
     }
 
-    Core3d::Model3dWireframe& xAxisModel = m_models[0];
-    Core3d::Model3dWireframe& yAxisModel = m_models[1];
-    Core3d::Model3dWireframe& zAxisModel = m_models[2];
-    Core3d::Model3dWireframe& selectedModel = m_models.back();
+    Core3d::Model3dBase& xAxisModel = m_axisModels[0];
+    Core3d::Model3dBase& yAxisModel = m_axisModels[1];
+    Core3d::Model3dBase& zAxisModel = m_axisModels[2];
+    Core3d::Model3dBase& selectedModel = m_models.back();
 
     if (m_modelOrPivotRotationOn) {
         const float radRotationSpeed = glm::radians(m_rotationSpeed) * 10.0f;
@@ -395,7 +402,7 @@ void Scene3d::scrollCallback(
 {
     auto* scenePtr = (Scene3d*)glfwGetWindowUserPointer(window);
     const float scaleFactor = dy * 0.1f;
-    Core3d::Model3dWireframe& selectedModel = scenePtr->m_models.back();
+    Core3d::Model3dBase& selectedModel = scenePtr->m_models.back();
     const Coord3d& pivotTranslation = scenePtr->m_pivotTranslation;
     const Coord3d& pivotYawPitchRoll = scenePtr->m_pivotYawPitchRoll;
     if (scenePtr->m_modelXScalingOn) {
@@ -466,18 +473,12 @@ void Scene3d::keyCallback(
     if (key == GLFW_KEY_C && action == GLFW_RELEASE)
         scenePtr->m_modelZScalingOn = false;
 
-    if (key == GLFW_KEY_1 && action == GLFW_RELEASE) {
-        scenePtr->m_showColors = true;
-        scenePtr->m_showDepth = false;
-    }
-    if (key == GLFW_KEY_2 && action == GLFW_RELEASE) {
-        scenePtr->m_showColors = false;
-        scenePtr->m_showDepth = true;
-    }
-    if (key == GLFW_KEY_3 && action == GLFW_RELEASE) {
-        scenePtr->m_showColors = true;
-        scenePtr->m_showDepth = true;
-    }
+    if (key == GLFW_KEY_1 && action == GLFW_RELEASE)
+        scenePtr->m_showColors ^= true;
+    if (key == GLFW_KEY_2 && action == GLFW_RELEASE)
+        scenePtr->m_showDepth ^= true;
+    if (key == GLFW_KEY_3 && action == GLFW_RELEASE)
+        scenePtr->m_showShading ^= true;
     if (key == GLFW_KEY_TAB && action == GLFW_RELEASE)
         scenePtr->m_showAxes ^= true;
 }

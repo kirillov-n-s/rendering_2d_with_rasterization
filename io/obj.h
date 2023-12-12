@@ -24,10 +24,9 @@ std::string verticesAndAdjacencyFromObj(
 	HomogCoords3d& outVertices,
 	AdjacencyMat& outAdjacency);
 
-std::string verticesFacesAndAdjacencyFromObj(
+std::string verticesAndTrianglesFromObj(
 	const std::string& path,
 	HomogCoords3d& outVertices,
-	IndexVec& outTriangleVertexIndices,
-	AdjacencyMat& outAdjacency);
+	IndexVec& outTriangleVertexIndices);
 }
 

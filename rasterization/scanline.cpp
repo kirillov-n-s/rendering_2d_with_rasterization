@@ -1,3 +1,4 @@
+#include <glm/common.hpp>
 #include <glm/vector_relational.hpp>
 #include "scanline.h"
 
@@ -30,6 +31,7 @@ void scanlineTriangle(
     const int upperPartHeight = t2.y - t1.y;
     const int lowerPartHeight = t1.y - t0.y;
     for (int y = 0; y < triangleHeight; ++y) {
+        const int pixelY = t0.y + y;
         const bool isUpperPart = hasNoLowerPart || y > lowerPartHeight;
         const int partHeight = isUpperPart ? upperPartHeight : lowerPartHeight;
         const float triangleHeightRatio = (float)y / triangleHeight;
@@ -43,11 +45,10 @@ void scanlineTriangle(
             std::swap(scanlineStart, scanlineEnd);
         const PixelCoord3d scanlineVec = scanlineEnd - scanlineStart;
         for (int x = scanlineStart.x; x <= scanlineEnd.x; ++x) {
+            const int pixelX = x;
             const float scanlineRatio = scanlineEnd.x == scanlineStart.x
                 ? 1.0f
                 : float(x - scanlineStart.x) / scanlineVec.x;
-            const int pixelX = x;
-            const int pixelY = t0.y + y;
             const int depth = float(scanlineStart.z) + float(scanlineVec.z) * scanlineRatio;
             const int prevDepth = colorToInt(zBuffer.getPixel(pixelX, pixelY));
             if (prevDepth < depth) {

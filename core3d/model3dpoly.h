@@ -13,6 +13,8 @@ namespace Core3d {
 
 		IndexVec triangleVertexIndices() const;
 
+		Coords3d triangleNormals() const;
+
 	private:
 		IndexVec m_triangleVertexIndices;
 	};

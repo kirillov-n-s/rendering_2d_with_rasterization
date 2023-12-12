@@ -5,6 +5,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include "rasterization/color.h"
 
 using HomogCoord2d = glm::vec3;
 using Coord2d = glm::vec2;
@@ -20,6 +21,7 @@ using PixelCoords3d = std::vector<glm::ivec3>;
 using AdjacencyVec = std::vector<bool>;
 using AdjacencyMat = std::vector<AdjacencyVec>;
 using IndexVec = std::vector<int>;
+using ColorVec = std::vector<Rasterization::Color>;
 
 inline HomogCoord2d homog2d(const float x, const float y)
 {

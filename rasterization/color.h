@@ -48,14 +48,14 @@ inline Color colorGray(const byte gray, const byte a = 255)
 	};
 }
 
-inline Color colorRandom()
+inline Color colorRandom(const byte from = 0, const byte to = 255)
 {
-	std::default_random_engine rng(std::random_device{}());
-	std::uniform_int_distribution<int> distrib(127, 255);
+	std::default_random_engine randomEngine(std::random_device{}());
+	std::uniform_int_distribution<int> distribution(from, to);
 	return Color{
-		.r = byte(distrib(rng)),
-		.g = byte(distrib(rng)),
-		.b = byte(distrib(rng))
+		.r = byte(distribution(randomEngine)),
+		.g = byte(distribution(randomEngine)),
+		.b = byte(distribution(randomEngine))
 	};
 }
 
@@ -66,7 +66,7 @@ inline int colorToInt(const Color color)
 
 inline Color intToColor(const int val)
 {
-	return *reinterpret_cast<const Color*>(&val);
+	return *reinterpret_cast<const Color *>(&val);
 }
 
 const Color depthMinValue = intToColor(std::numeric_limits<int>::min());

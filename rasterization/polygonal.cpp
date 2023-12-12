@@ -40,21 +40,6 @@ void rasterizeTrianglesWithZBuffer(
 	}
 }
 
-void rasterizeDepthMap(
-	const Coords3d& screenVerticesWithDepth,
-	const IndexVec& triangleVertexIndices,
-	Bitmap& bitmap,
-	Bitmap& zBuffer)
-{
-	const std::vector<Triangle> triangles = modelToTriangles(
-		screenVerticesWithDepth,
-		triangleVertexIndices);
-	const int nTriangles = triangles.size();
-	for (const Triangle& triangle : triangles)
-		scanlineTriangle(triangle, colorWhite, bitmap, zBuffer);
-	zBufferToDepthMap(zBuffer, bitmap);
-}
-
 void zBufferToDepthMap(
 	const Bitmap& zBuffer,
 	Bitmap& depthMap)

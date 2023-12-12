@@ -2,7 +2,8 @@
 
 #include "rendering/rendering.h"
 #include "rasterization/bitmap.h"
-#include "core3d/model3dwireandpoly.h"
+#include "core3d/model3dwireframe.h"
+#include "core3d/model3dpoly.h"
 #include "core3d/camera3d.h"
 
 class Scene3d
@@ -20,8 +21,8 @@ public:
 		const std::array<Rasterization::Color, 3> &colors);
 
 	void addModel(
-		const Core3d::Model3dWireAndPoly& model,
-		const Rasterization::Color& color);
+		const Core3d::Model3dPoly& model,
+		const std::vector<Rasterization::Color> &colorsPerTriangle);
 
 	void run();
 
@@ -44,7 +45,7 @@ private:
 	std::vector<Core3d::Model3dWireframe> m_axisModels;
 	std::vector<Rasterization::Color> m_axisColors;
 
-	std::vector<Core3d::Model3dWireAndPoly> m_models;
+	std::vector<Core3d::Model3dPoly> m_models;
 	std::vector<std::vector<Rasterization::Color>> m_triangleColorsPerModel;
 
 	Core3d::Camera3d m_camera;
@@ -65,6 +66,7 @@ private:
 
 	bool m_showColors = true;
 	bool m_showDepth = false;
+	bool m_showShading = false;
 	bool m_showAxes = false;
 
 	static void resizeCallback(

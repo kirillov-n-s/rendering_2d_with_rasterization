@@ -16,6 +16,7 @@ add_executable(laba1 main.cpp
 	"rasterization/wireframe.h" "rasterization/wireframe.cpp"
 	"rasterization/scanline.h" "rasterization/scanline.cpp"
 	"rasterization/polygonal.cpp" "rasterization/polygonal.h"
+	"rasterization/shading.h" "rasterization/shading.cpp"
 
 	"rendering/rendering.h" "rendering/rendering.cpp"
 	
@@ -28,7 +29,7 @@ add_executable(laba1 main.cpp
 	"core3d/model3dbase.cpp" "core3d/model3dbase.h"
 	"core3d/model3dwireframe.cpp" "core3d/model3dwireframe.h"
 	"core3d/model3dpoly.h" "core3d/model3dpoly.cpp"
-	"core3d/model3dwireandpoly.cpp" "core3d/model3dwireandpoly.h"
+	 
 	
 	"io/obj.h" "io/obj.cpp"
 )

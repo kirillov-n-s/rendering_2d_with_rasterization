@@ -73,7 +73,7 @@ int main()
 	Core3d::Camera3d camera(
 		(Directions3d::forward + Directions3d::up * 0.5f) * 30.0f,
 		100.0f, 1000.0f,
-		300, 300,
+		900, 900,
 		-100.0f, 100.0f, -100.0f, 100.0f
 	);
 	camera.rotate(0.0f, -30.0f);
@@ -98,24 +98,25 @@ int main()
 
 	HomogCoords3d objVertices;
 	IndexVec objTriangleVertexIndices;
-	AdjacencyMat objAdjacency;
-	const std::string error = IO::verticesFacesAndAdjacencyFromObj(
-		R"(C:\Users\kirillov_n_s\Desktop\University\CG\assets\Skull.obj)",
+	const std::string error = IO::verticesAndTrianglesFromObj(
+		R"(..\..\..\assets\Skull_500.obj)",
 		objVertices,
-		objTriangleVertexIndices,
-		objAdjacency);
+		objTriangleVertexIndices);
 	if (!error.empty()) {
 		std::cerr << error;
 		exit(1);
 	}
-	Core3d::Model3dWireAndPoly objModel(objVertices, objAdjacency, objTriangleVertexIndices);
+	std::cout
+		<< "nVertices = " << objVertices.size() << "\n"
+		<< "nTriangles = " << objTriangleVertexIndices.size() / 3 << std::endl;
+	Core3d::Model3dPoly objModel(objVertices, objTriangleVertexIndices);
 
-	Scene3d scene(camera, 3, Rasterization::colorGray(64));
+	Scene3d scene(camera, 1, Rasterization::colorGray(64));
 
 	scene.setAxisModels(
 		{ xAxisModel, yAxisModel, zAxisModel },
 		{ Rasterization::colorRed, Rasterization::colorGreen, Rasterization::colorBlue });
-	scene.addModel(objModel, Rasterization::Color {128, 128, 255});
+	scene.addModel(objModel, {});
 
 	scene.run();
 }

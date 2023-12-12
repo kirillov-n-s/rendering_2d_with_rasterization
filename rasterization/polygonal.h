@@ -15,12 +15,6 @@ void rasterizeTrianglesWithZBuffer(
 	Bitmap& bitmap,
 	Bitmap& zBuffer);
 
-void rasterizeDepthMap(
-	const Coords3d& screenVerticesWithDepth,
-	const IndexVec& triangleVertexIndices,
-	Bitmap& bitmap,
-	Bitmap& zBuffer);
-
 void zBufferToDepthMap(
 	const Bitmap& zBuffer,
 	Bitmap& depthMap);
