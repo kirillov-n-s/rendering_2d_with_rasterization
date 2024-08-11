@@ -120,6 +120,9 @@ void Scene3d::render()
         std::vector<Rasterization::Color> colorPerTriangle;
         if (m_showColors)
             colorPerTriangle = m_triangleColorsPerModel[modelInd];
+        else if (m_showNormals)
+            for (const Coord3d& normal : triangleNormals)
+                colorPerTriangle.push_back(Rasterization::normalToColor(normal));
         else
             colorPerTriangle.assign(nTriangles, Rasterization::colorWhite);
         if (m_showShading)
@@ -479,6 +482,8 @@ void Scene3d::keyCallback(
         scenePtr->m_showDepth ^= true;
     if (key == GLFW_KEY_3 && action == GLFW_RELEASE)
         scenePtr->m_showShading ^= true;
+    if (key == GLFW_KEY_4 && action == GLFW_RELEASE)
+        scenePtr->m_showNormals ^= true;
     if (key == GLFW_KEY_TAB && action == GLFW_RELEASE)
         scenePtr->m_showAxes ^= true;
 }

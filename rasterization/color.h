@@ -1,8 +1,10 @@
 #pragma once
 
 #include <random>
+#include <glm/vec3.hpp>
 
 using byte = unsigned char;
+using Coord3d = glm::vec3;
 
 namespace Rasterization {
 
@@ -38,36 +40,15 @@ const Color colorWhite{
 	.b = 255
 };
 
-inline Color colorGray(const byte gray, const byte a = 255)
-{
-	return Color{
-		.r = gray,
-		.g = gray,
-		.b = gray,
-		.a = a
-	};
-}
+Color colorGray(const byte gray, const byte a = 255);
 
-inline Color colorRandom(const byte from = 0, const byte to = 255)
-{
-	std::default_random_engine randomEngine(std::random_device{}());
-	std::uniform_int_distribution<int> distribution(from, to);
-	return Color{
-		.r = byte(distribution(randomEngine)),
-		.g = byte(distribution(randomEngine)),
-		.b = byte(distribution(randomEngine))
-	};
-}
+Color colorRandom(const byte from = 0, const byte to = 255);
 
-inline int colorToInt(const Color color)
-{
-	return *reinterpret_cast<const int *>(&color);
-}
-
-inline Color intToColor(const int val)
-{
-	return *reinterpret_cast<const Color *>(&val);
-}
+int colorToInt(const Color color);
+Color intToColor(const int val);
 
 const Color depthMinValue = intToColor(std::numeric_limits<int>::min());
+
+Color normalizedCoordToColor(const Coord3d& coord);
+Color normalToColor(const Coord3d& normal);
 }

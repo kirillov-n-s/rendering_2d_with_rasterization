@@ -32,7 +32,7 @@ add_executable(laba1 main.cpp
 	 
 	
 	"io/obj.h" "io/obj.cpp"
-)
+ "rasterization/color.cpp")
 
 target_link_libraries(laba1 opengl32.lib)
 target_link_libraries(laba1 glew32.lib)

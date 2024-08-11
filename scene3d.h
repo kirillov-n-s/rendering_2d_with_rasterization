@@ -65,6 +65,7 @@ private:
 	bool m_modelZScalingOn = false;
 
 	bool m_showColors = true;
+	bool m_showNormals = false;
 	bool m_showDepth = false;
 	bool m_showShading = false;
 	bool m_showAxes = false;
